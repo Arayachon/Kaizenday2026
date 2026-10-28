@@ -1,0 +1,97 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kaizen Day 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+:root{--bg:#f4f5f2;--fg:#1c2a2e;--card:#fff;--ac:#c8372d;--mu:#66757a;--bd:#d6dad5;--ok:#1d7a4d}
+@media(prefers-color-scheme:dark){:root{--bg:#141a1c;--fg:#e9eeee;--card:#1d2527;--ac:#ef6a5f;--mu:#93a2a6;--bd:#2f3a3d;--ok:#4cc58a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 "Noto Sans Thai","Sarabun",system-ui,sans-serif}
+main{max-width:620px;margin:0 auto;padding:12px 14px 60px}
+header{display:flex;align-items:baseline;justify-content:space-between;padding:10px 0}header b{font-size:20px;letter-spacing:.01em}header span{color:var(--ac);font-weight:700}
+nav{display:flex;gap:0;border:1px solid var(--bd);border-radius:8px;overflow:hidden;margin-bottom:14px}
+nav button{flex:1;border:0;background:var(--card);color:var(--fg);padding:10px;font:inherit;cursor:pointer}nav button.on{background:var(--fg);color:var(--bg)}
+section{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:14px;margin-bottom:12px}
+h3,h4{margin:.2em 0 .5em}input,select{width:100%;padding:10px;margin:4px 0 8px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--fg);font:inherit}
+button{font:inherit;cursor:pointer}.pri{background:var(--ac);color:#fff;border:0;border-radius:6px;padding:10px 16px}
+.ch{display:block;width:100%;text-align:left;margin:6px 0;padding:11px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--fg)}.ch:disabled{opacity:.45}
+.mu{color:var(--mu)}table{width:100%;border-collapse:collapse}td{border-top:1px solid var(--bd);padding:5px 4px}
+#toast{position:fixed;left:12px;right:12px;bottom:14px;max-width:596px;margin:auto;padding:12px 14px;border-radius:8px;color:#fff;background:var(--ac);display:none}#toast.ok{background:var(--ok)}
+.kp{display:flex;gap:14px;flex-wrap:wrap}.kp div{flex:1;min-width:70px}.kp b{display:block;font-size:26px}
+.qc{display:inline-block;margin:6px;font-size:13px;max-width:170px}#reader{max-width:320px}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+</style></head><body><main>
+<header><b>Kaizen Day <span>2026</span></b></header>
+<nav><button class="on" onclick="go('u',this)">ผู้เข้าร่วม</button><button onclick="go('s',this)">Staff</button><button onclick="go('a',this)">Admin</button></nav>
+
+<div id="u">
+ <section id="reg" hidden><h3>ลงทะเบียน / เข้าสู่ระบบ</h3>
+  <input id="c" placeholder="รหัสพนักงาน" autocomplete="off"><input id="n" placeholder="ชื่อ-นามสกุล"><input id="d" placeholder="แผนก">
+  <button class="pri" onclick="reg()">ลงทะเบียน</button> <button class="ch" style="margin-top:10px" onclick="login()">มีรายชื่ออยู่แล้ว เข้าด้วยรหัสพนักงาน</button></section>
+ <div id="me" hidden>
+  <section><h3 id="nm"></h3><div id="qr"></div><p id="ci"></p><p id="sc"></p><button class="ch" onclick="localStorage.removeItem('code');loadMe()">ออกจากระบบ</button></section>
+  <section id="qz" hidden></section>
+  <section><h3>Live Quiz</h3><div id="lv" class="mu">รอผู้จัดเริ่มคำถาม...</div></section>
+  <section><h3>บูธที่ได้ตรา</h3><div id="bt"></div></section>
+ </div>
+</div>
+
+<div id="s" hidden><section><h3>สแกนผู้เข้าร่วม</h3>
+ <select id="md"><option value="M">เช็กอินเช้า</option><option value="A">เช็กอินบ่าย</option><option value="S">ประทับตราบูธ</option></select>
+ <button class="pri" onclick="cam()">เปิดกล้อง</button><div id="reader"></div>
+ <input id="mc" placeholder="หรือพิมพ์รหัสพนักงาน"><button class="ch" onclick="scan($('#mc').value)">ตกลง</button>
+ <p id="res" class="mu"></p><div id="bs"></div></section></div>
+
+<div id="a" hidden>
+ <section><h3>นำเข้าข้อมูล (Excel/CSV)</h3>
+  <p class="mu">รายชื่อ: EmpCode, FullName, Department, Email</p><input type="file" onchange="up(this,'import')">
+  <p class="mu">บูธ: id, name, pts</p><input type="file" onchange="up(this,'booths')">
+  <p class="mu">โจทย์: id, kind (live/qr), seq, txt, a, b, c, d, ok, pts, secs, tok</p><input type="file" onchange="up(this,'questions')"></section>
+ <section><h3>ควบคุม Live Quiz</h3><p id="ls" class="mu"></p>
+  <button class="pri" onclick="lv('next')">ข้อถัดไป</button> <button class="pri" onclick="lv('close')">ปิดรับ</button> <button class="pri" onclick="lv('reveal')">เฉลย</button> <button class="ch" onclick="lv('reset')">เริ่มใหม่</button></section>
+ <section><h3>Dashboard</h3><button class="pri" onclick="dash()">รีเฟรช</button> <button class="pri" onclick="exp()">Export Excel</button><div id="dv"></div></section>
+ <section><h3>QR ของ QR Quiz</h3><button class="ch" onclick="qrs()">สร้าง QR ทุกข้อ</button><div id="ql"></div></section>
+</div>
+<div id="toast" role="status"></div></main>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+const api=async(p,m='GET',b,t=0)=>{const r=await fetch('/api/'+p,{method:m,headers:{'content-type':'application/json','x-pin':sessionStorage.pin||''},body:b&&JSON.stringify(b)});const j=await r.json().catch(()=>({}));
+ if(r.status==401&&!t){sessionStorage.pin=prompt('กรอก PIN')||'';return api(p,m,b,1)}if(!r.ok)throw Error(j.error||'เกิดข้อผิดพลาด');return j};
+let tt;const toast=(m,ok)=>{const e=$('#toast');e.textContent=m;e.className=ok?'ok':'';e.style.display='block';clearTimeout(tt);tt=setTimeout(()=>e.style.display='none',3500);navigator.vibrate&&navigator.vibrate(ok?60:[80,60,80])};
+const go=(v,b)=>{['u','s','a'].forEach(x=>$('#'+x).hidden=x!=v);document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b));if(v=='s')api('booths').then(r=>booths=r).catch(()=>{})};
+let me=null,live=null,off=0,booths=[],cur='',last='',lt=0,rvq='';const qt=new URLSearchParams(location.search).get('q');
+async function reg(){try{const r=await api('register','POST',{code:$('#c').value,name:$('#n').value,dept:$('#d').value});localStorage.code=r.code;loadMe()}catch(e){toast(e.message)}}
+function login(){localStorage.code=$('#c').value.trim().toUpperCase();loadMe()}
+async function loadMe(){const c=localStorage.code;$('#reg').hidden=!!c;$('#me').hidden=!c;if(!c)return;
+ try{me=await api('me/'+c)}catch(e){localStorage.removeItem('code');toast(e.message);return loadMe()}
+ $('#nm').textContent=me.name+' · '+me.code;$('#qr').innerHTML='';new QRCode($('#qr'),{text:me.code,width:190,height:190});
+ const s=x=>me.ci.some(i=>i.sess==x);$('#ci').textContent='เช็กอิน  เช้า '+(s('M')?'✔':'○')+'   บ่าย '+(s('A')?'✔':'○');
+ $('#sc').textContent='คะแนนรวม '+(me.quiz+me.stamp)+' (Quiz '+me.quiz+', บูธ '+me.stamp+')';
+ $('#bt').innerHTML=me.st.map(x=>`<div>${esc(x.name)} +${x.pts} `+(me.rt.includes(x.booth)?'<span class="mu">โหวตแล้ว</span>':[1,2,3,4,5].map(n=>`<button onclick="rate('${esc(x.booth)}',${n})">${n}★</button>`).join(''))+'</div>').join('')||'<span class="mu">ยังไม่มีตรา ไปที่บูธให้ Staff สแกน QR ของคุณ</span>';
+ if(qt)qrq()}
+async function rate(b,r){try{await api('rate','POST',{code:me.code,booth:b,r});toast('ขอบคุณสำหรับคะแนน',1);loadMe()}catch(e){toast(e.message)}}
+const opts=q=>['a','b','c','d'].map(k=>`<button class="ch" onclick="ans('${esc(q.id)}','${k}')" ${q.dis?'disabled':''}>${k.toUpperCase()}. ${esc(q[k])}</button>`).join('');
+async function ans(id,a){try{const r=await api('answer','POST',{code:me.code,qid:id,ans:a});toast(r.ok===undefined?'ส่งคำตอบแล้ว':r.ok?'ถูกต้อง +'+r.pts:'ยังไม่ถูกต้อง',r.ok!==0);await loadMe();poll()}catch(e){toast(e.message)}}
+async function qrq(){try{const q=await api('qr/'+qt),an=me.an.find(x=>x.qid==q.id);$('#qz').hidden=false;
+ $('#qz').innerHTML='<h3>QR Quiz</h3><b>'+esc(q.txt)+'</b>'+opts({...q,dis:!!an})+(an?'<p>'+(an.ok?'✔ ถูกต้อง +'+an.pts:'✘ ยังไม่ถูกต้อง')+'</p>':'')}catch(e){$('#qz').hidden=false;$('#qz').textContent=e.message}}
+async function poll(){try{live=await api('live');off=live.now-Date.now();if(live.state=='reveal'&&me&&rvq!=live.q.id){rvq=live.q.id;await loadMe()}drawLive()}catch(e){}}
+function drawLive(){const q=live.q,box=$('#lv');$('#ls')&&($('#ls').textContent='สถานะ: '+live.state+(q?' · '+q.id:''));
+ if(!q||live.state=='wait'){box.textContent='รอผู้จัดเริ่มคำถาม...';return}
+ const an=me&&me.an.find(x=>x.qid==q.id);box.innerHTML='<b>'+esc(q.txt)+'</b><div id="tm" class="mu"></div>'+opts({...q,dis:!!an||live.state!='open'})+
+ (live.state=='reveal'?'<p>เฉลย: <b>'+esc(live.key)+'</b> '+(an?(an.ok?'✔ +'+an.pts:'✘'):'(ไม่ได้ตอบ)')+'</p>':an?'<p class="mu">ส่งคำตอบแล้ว</p>':'')}
+setInterval(()=>{if(live&&live.q&&live.state=='open'){const e=$('#tm');e&&(e.textContent='เหลือ '+Math.max(0,Math.ceil(live.q.secs-(Date.now()+off-live.t0)/1000))+' วินาที')}},500);setInterval(poll,3000);
+let sc;async function cam(){try{sc=sc||new Html5Qrcode('reader');await sc.start({facingMode:'environment'},{fps:10,qrbox:220},t=>scan(t))}catch(e){toast('เปิดกล้องไม่ได้ ใช้ช่องพิมพ์รหัสแทน')}}
+async function scan(t){t=String(t).trim().toUpperCase();if(!t||(t==last&&Date.now()-lt<3000))return;last=t;lt=Date.now();const m=$('#md').value;
+ try{if(m=='S'){const p=await api('me/'+t);cur=t;$('#res').textContent=p.name+' · ตราแล้ว '+p.st.length+' บูธ';
+  $('#bs').innerHTML=booths.map(b=>`<button class="ch" ${p.st.some(x=>x.booth==b.id)?'disabled':''} onclick="stamp('${esc(b.id)}')">${esc(b.name)} (+${b.pts})</button>`).join('')}
+  else{const r=await api('checkin','POST',{code:t,sess:m});$('#res').textContent=r.name+' เช็กอินสำเร็จ';toast(r.name+' เช็กอิน'+(m=='M'?'เช้า':'บ่าย')+'สำเร็จ',1)}}catch(e){$('#res').textContent=e.message;toast(e.message)}}
+async function stamp(b){try{const r=await api('stamp','POST',{code:cur,booth:b});toast(r.name+' ได้ตรา +'+r.pts,1);last='';scan(cur)}catch(e){toast(e.message)}}
+async function up(i,ep){const f=i.files[0];if(!f)return;const wb=XLSX.read(await f.arrayBuffer());const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+ try{const r=await api(ep,'POST',{rows});toast('สำเร็จ '+JSON.stringify(r),1)}catch(e){toast(e.message)}i.value=''}
+const lv=a=>api('live','POST',{a}).then(poll).catch(e=>toast(e.message));
+const tbl=(t,k,r)=>`<h4>${t}</h4><table>`+r.map(x=>'<tr>'+k.map(c=>`<td>${esc(x[c]??'-')}</td>`).join('')+'</tr>').join('')+'</table>';
+async function dash(){try{const d=await api('dash');$('#dv').innerHTML=`<div class="kp"><div><b>${d.reg}</b>ลงทะเบียน</div><div><b>${d.m}</b>เช้า</div><div><b>${d.a}</b>บ่าย</div><div><b>${d.both}</b>ทั้งวัน</div></div>`+
+ tbl('เข้างานตามแผนก',['d','n'],d.dept)+tbl('บูธ: เยี่ยม / แต้ม / โหวตเฉลี่ย',['name','visits','pts','avg'],d.booth)+tbl('Top 10',['name','total'],d.top)+tbl('Quiz ต่อข้อ: ตอบ / ถูก',['id','kind','n','ok'],d.qs)}catch(e){toast(e.message)}}
+function exp(){if(!sessionStorage.pin)sessionStorage.pin=prompt('กรอก PIN Admin')||'';location='/api/export?pin='+encodeURIComponent(sessionStorage.pin)}
+async function qrs(){try{const l=$('#ql');l.innerHTML='';(await api('questions')).filter(x=>x.kind=='qr').forEach(x=>{const d=document.createElement('div');d.className='qc';d.append(x.id+': '+x.txt);const e=document.createElement('div');d.append(e);l.append(d);new QRCode(e,{text:location.origin+'/?q='+x.tok,width:150,height:150})})}catch(e){toast(e.message)}}
+loadMe();poll();
+</script></body></html>
